@@ -1,0 +1,75 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{polski}
+\usepackage{verbatim}
+\usepackage{unicode-math}
+\usepackage[utf8]{inputenc}
+%\usepackage[polish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+%\usepackage[cp1250]{inputenc}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\title{TAIO}
+\author{Piotr Widomski}
+\date{21.12.2021}
+
+\begin{document}
+
+\maketitle
+
+\section{Cel projektu}
+
+Celem projektu jest porównanie wydajności prognozowania sezonowych szeregów czasowych za pomocą maszyny \texttt{SARIMA} (\texttt{Seasonal ARIMA}) oraz liniowej kombinacji maszyn \texttt{ARIMA}, działających na co $n$-tym elemencie szeregu.
+
+\section{Użyte dane}
+
+Do porównania metod użyte zostały dane przedstawiające średnią miesięczną temperaturę powietrza mierzoną na Dublińskim lotnisku od roku 1941. Dane zostały pobrane z portalu inicjatywy \href{https://data.gov.ie/dataset/dublin-airport-monthly-data?package_type=dataset}{Open Data} prowadzonej przez rząd irlandzki. Pomiary wykonane zostały przez \href{https://www.met.ie/}{Met Éireann} - irlandzki narodowy serwis meteorologiczny i udostępnione na licencji CC Attribution 4.0.
+
+Na potrzeby projektu użyty został wycinek danych zawierających pełne lata, od 1942 do 2020 roku, czyli 79 lat pomiarów. Dane te zostały podzielone na treningowe oraz testowe w stosunku około $80\%$, gdzie dane treningowe zawierają 63 lata, od 1942 do 2004 roku, a dane testowe - 16 lat, od 2005 do 2020 roku.
+
+\section{Opis metod}
+
+\subsection{ARIMA}
+
+\texttt{ARIMA} jest klasą modelów, które opisują szereg na podstawie poprzednich wartości. Model \texttt{ARIMA} składa się z trzech procesów:
+
+\begin{itemize}
+    \item \texttt{AR} (autoregresyjny) - każda wartość jest liniową kombinacją pewnej liczby poprzednich wartości. Liczbę poprzednich wartości użytych przy obliczeniu następnej oznaczamy przez $p$, a a proces autoregresyjny z rzędem regresji $p$ - \texttt{AR(p)} i przedstawiamy następująco:
+    \[
+        y_t = \alpha + \beta_1y_{t-1} + \beta_2y_{t-2} + \dots + \beta_py_{t-p} + \epsilon_t
+    \]
+    gdzie $y_{t-i}$ jest $i$-tą poprzednią wartością ciągu w chwili $t$, $\beta_i$ jest współczynnikiem i-tej poprzedniej wartości, $\epsilon_t$ zaburzeniem w momencie t, a $\alpha$ - wartością podstawową.
+    \item \texttt{MA} (średniej ruchomej) - każda wartość jest zależna od zaburzenia w chwili obecnej oraz wcześniejszych. Liczbę poprzednich zaburzeń uwzględnionych przy obliczeniu następnej wartości oznaczamy przez $q$, a proces średniej ruchomej rzędu $q$ - \texttt{MA(q)} i przedstawiamy:
+    \[
+        y_t = \alpha + \epsilon_t + \phi_1\epsilon_{t-1} + \phi_2\epsilon_{t-2} + \dots + \phi_q\epsilon_{t-q}
+    \]
+    gdzie $\epsilon_t$ jest zaburzeniem w momencie t, $\phi_i$ - współczynnikiem $i$-tego poprzedniego zaburzenia, a $\alpha$ - wartością podstawową.
+    \item \texttt{I} (integracja) - w celu modelowania ciągów niestacjonarnych, model \texttt{ARIMA} może wykonywać różnicowanie pewnego stopnia, w celu operowania na bardziej stacjonarnym ciągu. W takim wypadku, zamiast następnej wartości, model prognozuje różnicę wartości. Jednak dzięki znajomości poprzedniej wartości możemy wyliczyć na podstawie różnicy następną wartość. Stopień różnicowania oznacza się przez $d$.
+\end{itemize}
+
+Łącząc powyższe procesy, otrzymujemy ogólny wzór modelu \texttt{ARIMA}:
+\begin{gather*}
+    y_t^* = \alpha + \sum^p_{i=1}\beta_iy^*_{t-i} + \sum^q_{i=1} + \phi_i\epsilon_{t-i} + \epsilon_t \\
+    y_t^* = \Delta^dy_t
+\end{gather*}
+Poszczególne modele \texttt{ARIMA} definiuje się za pomocą trzech zmiennych całkowitych $p, d, q$ i zapisuje \texttt{ARIMA(p, d, q)}.
+
+\subsection{SARIMA}
+
+\texttt{SARIMA}, lub \texttt{Seasonal ARIMA}, jest rozszerzeniem modelu \texttt{ARIMA} wspierającym ciągi czasowe wykazujące sezonowość, czyli takie, które posiadają powtarzające się z pewną określaną częstością zmiany wartości. Częstość tę oznaczymy przez $S$.
+
+Rozszerzenie to dodaje trzy nowe, analogiczne do modelu \texttt{ARIMA} procesy:
+\begin{itemize}
+    \item Sezonową autoregresję - stopień oznaczamy przez $P$
+    \item Sezonową średnią ruchomą - stopień oznaczamy przez $Q$
+    \item Sezonową integrację - stopień oznaczamy przez $D$
+\end{itemize}
+
+\subsection{Kombinacja liniowa maszyn ARIMA}
+
+\end{document}
