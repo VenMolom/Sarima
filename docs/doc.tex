@@ -69,6 +69,11 @@ Rozszerzenie to dodaje trzy nowe, analogiczne do modelu \texttt{ARIMA} procesy:
     \item Sezonową średnią ruchomą - stopień oznaczamy przez $Q$
     \item Sezonową integrację - stopień oznaczamy przez $D$
 \end{itemize}
+Uwzględniając nowe procesy, otrzymujemy ogólny wzór modelu \texttt{SARIMA}:
+\begin{gather*}
+    y_t^* = \alpha + \sum^p_{i=1}\beta_iy^*_{t-i} + \sum^q_{i=1} + \phi_i\epsilon_{t-i} + \epsilon_t \\
+    y_t^* = \Delta^dy_t
+\end{gather*}
 
 \subsection{Kombinacja liniowa maszyn ARIMA}
 
