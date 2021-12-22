@@ -8,7 +8,7 @@
 \usepackage[utf8]{inputenc}
 %\usepackage[polish]{babel}
 \usepackage[T1]{fontenc}
-\usepackage{graphicx}
+\usepackage{grathetacx}
 %\usepackage[cp1250]{inputenc}
 \usepackage{caption}
 \usepackage{enumitem}
@@ -41,20 +41,20 @@ Na potrzeby projektu użyty został wycinek danych zawierających pełne lata, o
 \begin{itemize}
     \item \texttt{AR} (autoregresyjny) - każda wartość jest liniową kombinacją pewnej liczby poprzednich wartości. Liczbę poprzednich wartości użytych przy obliczeniu następnej oznaczamy przez $p$, a a proces autoregresyjny z rzędem regresji $p$ - \texttt{AR(p)} i przedstawiamy następująco:
     \[
-        y_t = \alpha + \beta_1y_{t-1} + \beta_2y_{t-2} + \dots + \beta_py_{t-p} + \epsilon_t
+        y_t = \alpha + \phi_1y_{t-1} + \phi_2y_{t-2} + \dots + \phi_py_{t-p} + \epsilon_t
     \]
-    gdzie $y_{t-i}$ jest $i$-tą poprzednią wartością ciągu w chwili $t$, $\beta_i$ jest współczynnikiem i-tej poprzedniej wartości, $\epsilon_t$ zaburzeniem w momencie t, a $\alpha$ - wartością podstawową.
+    gdzie $y_{t-i}$ jest $i$-tą poprzednią wartością ciągu w chwili $t$, $\phi_i$ jest współczynnikiem i-tej poprzedniej wartości, $\epsilon_t$ zaburzeniem w momencie t, a $\alpha$ - wartością podstawową.
     \item \texttt{MA} (średniej ruchomej) - każda wartość jest zależna od zaburzenia w chwili obecnej oraz wcześniejszych. Liczbę poprzednich zaburzeń uwzględnionych przy obliczeniu następnej wartości oznaczamy przez $q$, a proces średniej ruchomej rzędu $q$ - \texttt{MA(q)} i przedstawiamy:
     \[
-        y_t = \alpha + \epsilon_t + \phi_1\epsilon_{t-1} + \phi_2\epsilon_{t-2} + \dots + \phi_q\epsilon_{t-q}
+        y_t = \alpha + \epsilon_t + \theta_1\epsilon_{t-1} + \theta_2\epsilon_{t-2} + \dots + \theta_q\epsilon_{t-q}
     \]
-    gdzie $\epsilon_t$ jest zaburzeniem w momencie t, $\phi_i$ - współczynnikiem $i$-tego poprzedniego zaburzenia, a $\alpha$ - wartością podstawową.
+    gdzie $\epsilon_t$ jest zaburzeniem w momencie t, $\theta_i$ - współczynnikiem $i$-tego poprzedniego zaburzenia, a $\alpha$ - wartością podstawową.
     \item \texttt{I} (integracja) - w celu modelowania ciągów niestacjonarnych, model \texttt{ARIMA} może wykonywać różnicowanie pewnego stopnia, w celu operowania na bardziej stacjonarnym ciągu. W takim wypadku, zamiast następnej wartości, model prognozuje różnicę wartości. Jednak dzięki znajomości poprzedniej wartości możemy wyliczyć na podstawie różnicy następną wartość. Stopień różnicowania oznacza się przez $d$.
 \end{itemize}
 
 Łącząc powyższe procesy, otrzymujemy ogólny wzór modelu \texttt{ARIMA}:
 \begin{gather*}
-    y_t^* = \alpha + \sum^p_{i=1}\beta_iy^*_{t-i} + \sum^q_{i=1} + \phi_i\epsilon_{t-i} + \epsilon_t \\
+    y_t^* = \alpha + \sum^p_{i=1}\phi_iy^*_{t-i} + \sum^q_{i=1} + \theta_i\epsilon_{t-i} + \epsilon_t \\
     y_t^* = \Delta^dy_t
 \end{gather*}
 Poszczególne modele \texttt{ARIMA} definiuje się za pomocą trzech zmiennych całkowitych $p, d, q$ i zapisuje \texttt{ARIMA(p, d, q)}.
@@ -69,12 +69,33 @@ Rozszerzenie to dodaje trzy nowe, analogiczne do modelu \texttt{ARIMA} procesy:
     \item Sezonową średnią ruchomą - stopień oznaczamy przez $Q$
     \item Sezonową integrację - stopień oznaczamy przez $D$
 \end{itemize}
-Uwzględniając nowe procesy, otrzymujemy ogólny wzór modelu \texttt{SARIMA}:
+W celu zdefiniowania wzoru modelu \texttt{SARIMA} zdefiniujmy operator poprzednika $B$:
 \begin{gather*}
-    y_t^* = \alpha + \sum^p_{i=1}\beta_iy^*_{t-i} + \sum^q_{i=1} + \phi_i\epsilon_{t-i} + \epsilon_t \\
-    y_t^* = \Delta^dy_t
+    By_t = y_{t-1} \\
+    B^iy_t = y_{t-i}
+\end{gather*}
+Uwzględniając nowe procesy oraz operator $B$, otrzymujemy ogólny wzór modelu \texttt{SARIMA}:
+\begin{gather*}
+    \prod^p_{i=1}(1 - \phi_iB^i) \prod^P_{i=1}(1 - \Phi_iB^{Si}) \prod^d_{i=1}(1 - B^i) \prod^D_{i=1}(1 - B^{Si})y_y = \prod^q_{i=1}(1 + \theta_iB^i) \prod^Q_{i=1}(1 + \Theta_iB^{Si}) \epsilon_t
 \end{gather*}
 
 \subsection{Kombinacja liniowa maszyn ARIMA}
+
+Model ten składa się z grup maszyn \texttt{ARIMA} działających na co $n$-tym elemencie ciągu z ostatnich $S$ elementów, gdzie $S$ jest częstością maszyny \texttt{SARIMA}. Każda z maszyn w grupie operuje na pewnym podciągu ciągu bazowego zawierającego co $n$-ty element ciągu. Podciągi te są parami rozłączne, oraz ich suma równa jest ciągowi bazowemu. Każdy podciągów w grupie jest równej długości. Z tego powodu narzucamy ograniczenie na $n$: $n|S$. Maszyny wewnątrz grupy są uporządkowane według kolejności podciągów, czyli za pierwszą uznajemy maszynę, której podciąg zaczyna się od pierwszego elementu ciągu, drugą - od drugiego, itd.
+
+Weźmy grupy maszyn spełniające powyższe warunki i ponumerujmy je $1, 2, \dots, n$. Oznaczmy przez $y_{i,t}$ element otrzymany z grupy $i$ w momencie $t$. Wartość tą możemy uzyskać stosując wzór modelu \texttt{ARIMA} z maszyną z grupy $i$, której indeks wewnątrz grupy jest równy $t mod i$.
+Stosując kombinację liniową maszyn \texttt{ARIMA} otrzymujemy następujący wzór na następny element:
+\begin{gather*}
+    y_t = \sum^n_{i=1}\alpha_iy_{i,t}
+\end{gather*}
+gdzie $\alpha_i$ jest współczynnikiem $i$-tej grupy.
+
+\section{Implementacja}
+
+\subsection{Biblioteka modeli}
+
+DO budowy modeli została użyta biblioteka \href{https://www.statsmodels.org/stable/index.html}{\texttt{statsmodel}} zapewniająca implementacje modeli \texttt{ARIMA} oraz rozszerzenia \texttt{SARIMA}. Dodatkowo biblioteka ta umożliwia automatyczne dobranie odpowiednich współczynników na podstawie danych wejściowych oraz parametrów modelu. Dodatkowo udostępnia metody umożliwiające prognozowanie kolejnych elementów ciągu.
+
+Dodatkowo, w celu dobrania optymalnych parametrów modeli, użyta została biblioteka \href{https://alkaline-ml.com/pmdarima/}{\texttt{pmdarima}}, która umożliwia wyszukanie optymalnych parametrów modelu na podstawie ustalonych kryteriów, po czym zwraca maszynę utworzoną z dobranych przez siebie parametrów w implementacji kompatybilnej z tą, która znajduje się w bibliotece \texttt{statsmodels}.
 
 \end{document}
