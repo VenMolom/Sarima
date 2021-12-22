@@ -8,15 +8,16 @@
 \usepackage[utf8]{inputenc}
 %\usepackage[polish]{babel}
 \usepackage[T1]{fontenc}
-\usepackage{grathetacx}
+\usepackage{graphicx}
 %\usepackage[cp1250]{inputenc}
 \usepackage{caption}
 \usepackage{enumitem}
 \usepackage{hyperref}
 
-\title{TAIO}
+\title{Prognozowanie sezonowe - porównanie metod \\
+    \large Teoria Automatów i Obliczeń \\}
 \author{Piotr Widomski}
-\date{21.12.2021}
+\date{22.12.2021}
 
 \begin{document}
 
@@ -28,7 +29,7 @@ Celem projektu jest porównanie wydajności prognozowania sezonowych szeregów c
 
 \section{Użyte dane}
 
-Do porównania metod użyte zostały dane przedstawiające średnią miesięczną temperaturę powietrza mierzoną na Dublińskim lotnisku od roku 1941. Dane zostały pobrane z portalu inicjatywy \href{https://data.gov.ie/dataset/dublin-airport-monthly-data?package_type=dataset}{Open Data} prowadzonej przez rząd irlandzki. Pomiary wykonane zostały przez \href{https://www.met.ie/}{Met Éireann} - irlandzki narodowy serwis meteorologiczny i udostępnione na licencji CC Attribution 4.0.
+Do porównania metod użyte zostały dane przedstawiające średnią miesięczną temperaturę powietrza mierzoną na dublińskim lotnisku od roku 1941. Dane zostały pobrane z portalu inicjatywy \href{https://data.gov.ie/dataset/dublin-airport-monthly-data?package_type=dataset}{Open Data} prowadzonej przez rząd irlandzki. Pomiary wykonane zostały przez \href{https://www.met.ie/}{Met Éireann} - irlandzki narodowy serwis meteorologiczny i udostępnione na licencji CC Attribution 4.0.
 
 Na potrzeby projektu użyty został wycinek danych zawierających pełne lata, od 1942 do 2020 roku, czyli 79 lat pomiarów. Dane te zostały podzielone na treningowe oraz testowe w stosunku około $80\%$, gdzie dane treningowe zawierają 63 lata, od 1942 do 2004 roku, a dane testowe - 16 lat, od 2005 do 2020 roku.
 
@@ -76,12 +77,15 @@ W celu zdefiniowania wzoru modelu \texttt{SARIMA} zdefiniujmy operator poprzedni
 \end{gather*}
 Uwzględniając nowe procesy oraz operator $B$, otrzymujemy ogólny wzór modelu \texttt{SARIMA}:
 \begin{gather*}
-    \prod^p_{i=1}(1 - \phi_iB^i) \prod^P_{i=1}(1 - \Phi_iB^{Si}) \prod^d_{i=1}(1 - B^i) \prod^D_{i=1}(1 - B^{Si})y_y = \prod^q_{i=1}(1 + \theta_iB^i) \prod^Q_{i=1}(1 + \Theta_iB^{Si}) \epsilon_t
+    \prod^p_{i=1}(1 - \phi_iB^i) \prod^P_{i=1}(1 - \Phi_iB^{Si}) \prod^d_{i=1}(1 - B^i) \prod^D_{i=1}(1 - B^{Si})y_t = \\
+    \prod^q_{i=1}(1 + \theta_iB^i) \prod^Q_{i=1}(1 + \Theta_iB^{Si}) \epsilon_t
 \end{gather*}
+
+Poszczególne modele \texttt{SARIMA} definiuje się za pomocą zmiennych całkowitych niesezonowych $p, d, q$, zmiennych sezonowych $P, D, Q$ oraz częstości sezonowej $S$ i zapisuje \texttt{SARIMA(p, d, q) x (P, D, Q)S}.
 
 \subsection{Kombinacja liniowa maszyn ARIMA}
 
-Model ten składa się z grup maszyn \texttt{ARIMA} działających na co $n$-tym elemencie ciągu z ostatnich $S$ elementów, gdzie $S$ jest częstością maszyny \texttt{SARIMA}. Każda z maszyn w grupie operuje na pewnym podciągu ciągu bazowego zawierającego co $n$-ty element ciągu. Podciągi te są parami rozłączne, oraz ich suma równa jest ciągowi bazowemu. Każdy podciągów w grupie jest równej długości. Z tego powodu narzucamy ograniczenie na $n$: $n|S$. Maszyny wewnątrz grupy są uporządkowane według kolejności podciągów, czyli za pierwszą uznajemy maszynę, której podciąg zaczyna się od pierwszego elementu ciągu, drugą - od drugiego, itd.
+Model ten składa się z grup maszyn \texttt{ARIMA} działających na co $n$-tym elemencie ciągu z ostatnich $S$ elementów, gdzie $S$ jest częstością maszyny \texttt{SARIMA}. Każda z maszyn w grupie operuje na pewnym podciągu ciągu bazowego zawierającego co $n$-ty element ciągu. Podciągi te są parami rozłączne, oraz ich suma równa jest ciągowi bazowemu. Każdy podciągów w grupie jest równej długości. Z tego powodu narzucamy ograniczenie na $n$: $n|S$. Maszyny wewnątrz grupy są uporządkowane według kolejności podciągów, czyli za pierwszą uznajemy maszynę, której podciąg zaczyna się od pierwszego elementu ciągu, drugą - od drugiego, i tak dalej.
 
 Weźmy grupy maszyn spełniające powyższe warunki i ponumerujmy je $1, 2, \dots, n$. Oznaczmy przez $y_{i,t}$ element otrzymany z grupy $i$ w momencie $t$. Wartość tą możemy uzyskać stosując wzór modelu \texttt{ARIMA} z maszyną z grupy $i$, której indeks wewnątrz grupy jest równy $t mod i$.
 Stosując kombinację liniową maszyn \texttt{ARIMA} otrzymujemy następujący wzór na następny element:
@@ -94,7 +98,7 @@ gdzie $\alpha_i$ jest współczynnikiem $i$-tej grupy.
 
 \subsection{Biblioteka modeli}
 
-DO budowy modeli została użyta biblioteka \href{https://www.statsmodels.org/stable/index.html}{\texttt{statsmodel}} zapewniająca implementacje modeli \texttt{ARIMA} oraz rozszerzenia \texttt{SARIMA}. Dodatkowo biblioteka ta umożliwia automatyczne dobranie odpowiednich współczynników na podstawie danych wejściowych oraz parametrów modelu. Dodatkowo udostępnia metody umożliwiające prognozowanie kolejnych elementów ciągu.
+Do budowy modeli została użyta biblioteka \href{https://www.statsmodels.org/stable/index.html}{\texttt{statsmodel}} zapewniająca implementacje modeli \texttt{ARIMA} oraz rozszerzenia \texttt{SARIMA}. Dodatkowo biblioteka ta umożliwia automatyczne dobranie odpowiednich współczynników na podstawie danych wejściowych oraz parametrów modelu. Dodatkowo udostępnia metody umożliwiające prognozowanie kolejnych elementów ciągu.
 
 Dodatkowo, w celu dobrania optymalnych parametrów modeli, użyta została biblioteka \href{https://alkaline-ml.com/pmdarima/}{\texttt{pmdarima}}, która umożliwia wyszukanie optymalnych parametrów modelu na podstawie ustalonych kryteriów, po czym zwraca maszynę utworzoną z dobranych przez siebie parametrów w implementacji kompatybilnej z tą, która znajduje się w bibliotece \texttt{statsmodels}.
 
