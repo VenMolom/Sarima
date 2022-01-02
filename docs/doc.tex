@@ -11,13 +11,14 @@
 \usepackage{graphicx}
 %\usepackage[cp1250]{inputenc}
 \usepackage{caption}
+\usepackage{float}
 \usepackage{enumitem}
 \usepackage{hyperref}
 
 \title{Prognozowanie sezonowe - porównanie metod \\
     \large Teoria Algorytmów i Obliczeń \\}
 \author{Piotr Widomski}
-\date{22.12.2021}
+\date{02.01.2022}
 
 \begin{document}
 
@@ -31,7 +32,7 @@ Celem projektu jest porównanie wydajności prognozowania sezonowych szeregów c
 
 Do porównania metod użyte zostały dane przedstawiające średnią miesięczną temperaturę powietrza mierzoną na dublińskim lotnisku od roku 1941. Dane zostały pobrane z portalu inicjatywy \href{https://data.gov.ie/dataset/dublin-airport-monthly-data?package_type=dataset}{Open Data} prowadzonej przez rząd irlandzki. Pomiary wykonane zostały przez \href{https://www.met.ie/}{Met Éireann} - irlandzki narodowy serwis meteorologiczny i udostępnione na licencji CC Attribution 4.0.
 
-Na potrzeby projektu użyty został wycinek danych zawierających pełne lata, od 1942 do 2020 roku, czyli 79 lat pomiarów. Dane te zostały podzielone na treningowe oraz testowe w stosunku około $80\%$, gdzie dane treningowe zawierają 63 lata, od 1942 do 2004 roku, a dane testowe - 16 lat, od 2005 do 2020 roku.
+Na potrzeby projektu użyty został wycinek danych zawierających pełne lata, od 1942 do 2019 roku, czyli 78 lat pomiarów. Dane te zostały podzielone na treningowe oraz testowe w stosunku około $80\%$, gdzie dane treningowe zawierają 62 lata, od 1942 do 2003 roku, a dane testowe - 15 lat, od 2004 do 2019 roku. Rok 2021 został pominięty ze względu na niekompletność danych, natomiast 2020 - z powodu brakujących danych z marca.
 
 \section{Opis metod}
 
@@ -41,15 +42,15 @@ Na potrzeby projektu użyty został wycinek danych zawierających pełne lata, o
 
 \begin{itemize}
     \item \texttt{AR} (autoregresyjny) - każda wartość jest liniową kombinacją pewnej liczby poprzednich wartości. Liczbę poprzednich wartości użytych przy obliczeniu następnej oznaczamy przez $p$, a a proces autoregresyjny z rzędem regresji $p$ - \texttt{AR(p)} i przedstawiamy następująco:
-    \[
-        y_t = \alpha + \phi_1y_{t-1} + \phi_2y_{t-2} + \dots + \phi_py_{t-p} + \epsilon_t
-    \]
-    gdzie $y_{t-i}$ jest $i$-tą poprzednią wartością ciągu w chwili $t$, $\phi_i$ jest współczynnikiem i-tej poprzedniej wartości, $\epsilon_t$ zaburzeniem w momencie t, a $\alpha$ - wartością podstawową.
+          \[
+              y_t = \alpha + \phi_1y_{t-1} + \phi_2y_{t-2} + \dots + \phi_py_{t-p} + \epsilon_t
+          \]
+          gdzie $y_{t-i}$ jest $i$-tą poprzednią wartością ciągu w chwili $t$, $\phi_i$ jest współczynnikiem i-tej poprzedniej wartości, $\epsilon_t$ zaburzeniem w momencie t, a $\alpha$ - wartością podstawową.
     \item \texttt{MA} (średniej ruchomej) - każda wartość jest zależna od zaburzenia w chwili obecnej oraz wcześniejszych. Liczbę poprzednich zaburzeń uwzględnionych przy obliczeniu następnej wartości oznaczamy przez $q$, a proces średniej ruchomej rzędu $q$ - \texttt{MA(q)} i przedstawiamy:
-    \[
-        y_t = \alpha + \epsilon_t + \theta_1\epsilon_{t-1} + \theta_2\epsilon_{t-2} + \dots + \theta_q\epsilon_{t-q}
-    \]
-    gdzie $\epsilon_t$ jest zaburzeniem w momencie t, $\theta_i$ - współczynnikiem $i$-tego poprzedniego zaburzenia, a $\alpha$ - wartością podstawową.
+          \[
+              y_t = \alpha + \epsilon_t + \theta_1\epsilon_{t-1} + \theta_2\epsilon_{t-2} + \dots + \theta_q\epsilon_{t-q}
+          \]
+          gdzie $\epsilon_t$ jest zaburzeniem w momencie t, $\theta_i$ - współczynnikiem $i$-tego poprzedniego zaburzenia, a $\alpha$ - wartością podstawową.
     \item \texttt{I} (integracja) - w celu modelowania ciągów niestacjonarnych, model \texttt{ARIMA} może wykonywać różnicowanie pewnego stopnia, w celu operowania na bardziej stacjonarnym ciągu. W takim wypadku, zamiast następnej wartości, model prognozuje różnicę wartości. Jednak dzięki znajomości poprzedniej wartości możemy wyliczyć na podstawie różnicy następną wartość. Stopień różnicowania oznacza się przez $d$.
 \end{itemize}
 
@@ -101,5 +102,50 @@ gdzie $\alpha_i$ jest współczynnikiem $i$-tej grupy.
 Do budowy modeli została użyta biblioteka \href{https://www.statsmodels.org/stable/index.html}{\texttt{statsmodel}} zapewniająca implementacje modeli \texttt{ARIMA} oraz rozszerzenia \texttt{SARIMA}. Dodatkowo biblioteka ta umożliwia automatyczne dobranie odpowiednich współczynników na podstawie danych wejściowych oraz parametrów modelu. Dodatkowo udostępnia metody umożliwiające prognozowanie kolejnych elementów ciągu.
 
 Dodatkowo, w celu dobrania optymalnych parametrów modeli, użyta została biblioteka \href{https://alkaline-ml.com/pmdarima/}{\texttt{pmdarima}}, która umożliwia wyszukanie optymalnych parametrów modelu na podstawie ustalonych kryteriów, po czym zwraca maszynę utworzoną z dobranych przez siebie parametrów w implementacji kompatybilnej z tą, która znajduje się w bibliotece \texttt{statsmodels}.
+
+\subsection{SARIMA}
+
+Przed konstrukcją modelu wykonana została analiza danych za pomocą algorytmu \href{https://www.statsmodels.org/stable/generated/statsmodels.tsa.seasonal.seasonal_decompose.html}{rozkładu sezonowego} udostępnionego przez bibliotekę \texttt{statsmodels}. Wynik rozkłądu prezentuje się następująco:
+
+\begin{figure}[H]
+    \includegraphics[width=\textwidth]{img/decomposition.png}
+    \caption{Rozkład sezonowy danych}
+\end{figure}
+
+Wykres przedstawia kolejno: wartość, trend, komponent sezonowy oraz elemen losowy każdego elementu ciągu. W celu łatwiejszej analizy skupiono się na pierwszych dziesięciu latach:
+
+\begin{figure}[H]
+    \includegraphics[width=\textwidth]{img/decomposition_10y.png}
+    \caption{Rozkład sezonowy danych z pierwszych 10 lat}
+\end{figure}
+
+Z rozkładu danych zauważone zostało, że zgodnie z oczekiwaniami dane posiadają stały element sezonowy o okresie wynoszącym dwanaście miesięcy. Element sezonowy jest stały, więc jako wartość parametru $D$ użyto $1$. Dodatkowo trend danych jest niejednoznaczny. Z tego powodu wartość parametru $d$ ustalono jako $0$.
+
+Jako pomoc przy dobraniu parametrów modelu \texttt{SARIMA} użyte zostały wykresy autokorelacji (ACF) oraz częściowej autokorelacji danych (PACF):
+
+\begin{figure}[H]
+    \begin{minipage}{.5\textwidth}
+        \includegraphics[width=\textwidth]{img/acf.png}
+        \caption{Wykres autokorekacji}
+    \end{minipage}
+    \begin{minipage}{.5\textwidth}
+        \includegraphics[width=\textwidth]{img/pacf.png}
+        \caption{Wykres częsciowej autokorekacji}
+    \end{minipage}
+\end{figure}
+
+Wykres ACF posiada największą wartość dla wartości $12, 24, \dots$, co potwierda hipotezę o sezonowej częstości wynoszącej $12$ miesięcy. Wykres pzyjmuje wartości ponad poziomem istotności dla dwóch pierwszych wartości (pomijając zerową), co sprawia że jako parametr $q$ użyta została wartość $2$. Dodatkowo wartość dla elementu $12$, czyli $S$, jest dodatnia. Z tego powodu parametr $P$ będzie przyjmował wartość dodatnią, a parametr $Q$ wartość $0$.
+
+Wykres PACF przyjmuje wartości ponad poziomem istotności dla pierwszej wartości (pomijając zerową), co sprawia że jako parametr $p$ użyta została wartość $1$.
+
+Na podstawie analizy danych model \texttt{SARIMA(1, 0, 2) x (P, 1, 0)12}. Dokładna wartość $P$ została dobrana przy użyciu metody automatycznego dobierania parametrów modelu udostępnionej przez bibliotekę \texttt{pmdarima} i wyniosła $2$. Zatem ostateczna postać modelu wyniosła \texttt{SARIMA(1, 0, 2) x (2, 1, 0)12}.
+
+\subsection{ARIMA}
+
+
+
+\section{Wyniki}
+
+\section{Wnioski}
 
 \end{document}

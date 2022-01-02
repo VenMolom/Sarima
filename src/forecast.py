@@ -26,10 +26,9 @@ def read_df():
                      index_col=0,
                      parse_dates=[[0, 1]],
                      skiprows=2,
-                     skipfooter=10,
+                     skipfooter=21,
                      engine='python')
-    df = df.resample('MS').pad()
-    print(df)
+    df = df.resample('MS').asfreq()
     print('[File read]')
     return df
 
@@ -74,16 +73,12 @@ def process_results(test: DataFrame, sarima_results: Results, arima_results: Res
     plt.show()
 
 # helper method for data analysis
-def analyse(data: DataFrame):
+def analyze(data: DataFrame):
     result = seasonal_decompose(data, model="additive")
     result.plot()
 
-    # differencing (seasonal) order
-    print(ndiffs(data))
-    print(nsdiffs(data, S))
-
     plot_acf(data)
-    plot_pacf(data)
+    plot_pacf(data, method="ywm")
     plt.show()
 
 
@@ -93,40 +88,14 @@ def build_sarima_model(data: DataFrame, auto: bool):
 
     if auto:
         print('[Finding parameters]')
-        # ARIMA(2,0,2)(1,0,1)[12] intercept   : AIC=inf, Time=17.35 sec
-        # ARIMA(0,0,0)(0,0,0)[12] intercept   : AIC=4171.137, Time=0.07 sec
-        # ARIMA(1,0,0)(1,0,0)[12] intercept   : AIC=2771.028, Time=4.13 sec
-        # ARIMA(0,0,1)(0,0,1)[12] intercept   : AIC=3275.026, Time=1.75 sec
-        # ARIMA(0,0,0)(0,0,0)[12]             : AIC=5671.382, Time=0.03 sec
-        # ARIMA(1,0,0)(0,0,0)[12] intercept   : AIC=3381.856, Time=0.22 sec
-        # ARIMA(1,0,0)(2,0,0)[12] intercept   : AIC=inf, Time=13.20 sec
-        # ARIMA(1,0,0)(1,0,1)[12] intercept   : AIC=inf, Time=8.24 sec
-        # ARIMA(1,0,0)(0,0,1)[12] intercept   : AIC=3133.417, Time=1.50 sec
-        # ARIMA(1,0,0)(2,0,1)[12] intercept   : AIC=inf, Time=22.26 sec
-        # ARIMA(0,0,0)(1,0,0)[12] intercept   : AIC=inf, Time=3.42 sec
-        # ARIMA(2,0,0)(1,0,0)[12] intercept   : AIC=2769.029, Time=6.94 sec
-        # ARIMA(2,0,0)(0,0,0)[12] intercept   : AIC=3110.499, Time=0.37 sec
-        # ARIMA(2,0,0)(2,0,0)[12] intercept   : AIC=inf, Time=19.03 sec
-        # ARIMA(2,0,0)(1,0,1)[12] intercept   : AIC=inf, Time=10.40 sec
-        # ARIMA(2,0,0)(0,0,1)[12] intercept   : AIC=3062.754, Time=2.24 sec
-        # ARIMA(2,0,0)(2,0,1)[12] intercept   : AIC=inf, Time=25.03 sec
-        # ARIMA(3,0,0)(1,0,0)[12] intercept   : AIC=2768.910, Time=9.63 sec
-        # ARIMA(3,0,0)(0,0,0)[12] intercept   : AIC=2862.989, Time=0.37 sec
-        # ARIMA(3,0,0)(2,0,0)[12] intercept   : AIC=inf, Time=30.56 sec
-        # ARIMA(3,0,0)(1,0,1)[12] intercept   : AIC=2391.583, Time=13.28 sec
-        # ARIMA(3,0,0)(0,0,1)[12] intercept   : AIC=2857.519, Time=2.92 sec
-        # ARIMA(3,0,0)(2,0,1)[12] intercept   : AIC=inf, Time=34.97 sec
-        # ARIMA(3,0,0)(1,0,2)[12] intercept   : AIC=inf, Time=27.37 sec
-        # ARIMA(3,0,0)(0,0,2)[12] intercept   : AIC=2833.304, Time=15.06 sec
-        # ARIMA(3,0,0)(2,0,2)[12] intercept   : AIC=inf, Time=35.84 sec
-        # ARIMA(4,0,0)(1,0,1)[12] intercept   : AIC=2469.696, Time=14.71 sec
-        # ARIMA(3,0,1)(1,0,1)[12] intercept   : AIC=inf, Time=18.41 sec
-        # ARIMA(2,0,1)(1,0,1)[12] intercept   : AIC=inf, Time=13.63 sec
-        # ARIMA(4,0,1)(1,0,1)[12] intercept   : AIC=inf, Time=nan sec
-        # ARIMA(3,0,0)(1,0,1)[12]             : AIC=inf, Time=12.70 sec
         model = pm.auto_arima(data,
                             p=1,
+                            d=0,
+                            q=2,
                             seasonal=True,
+                            start_P=1,
+                            D=1,
+                            Q=0,
                             m=S,
                             trace=True,
                             error_action='ignore',
@@ -134,7 +103,7 @@ def build_sarima_model(data: DataFrame, auto: bool):
                             stepwise=True)
     else:
         print('[Using manual parameters]')
-        model = m.ARIMA(data, order=(3, 0, 0), seasonal_order=(1, 0, 1, S)).fit()
+        model = m.ARIMA(data, order=(1, 0, 2), seasonal_order=(2, 1, 0, S)).fit()
 
     print('[Model builded]')
     return model
@@ -199,9 +168,9 @@ def forecast_arima(train: DataFrame, test: DataFrame, splits: np.ndarray):
 def main():
     df = read_df()
 
-    analyse(df)
+    # analyze(df)
 
-    split = 756 # 63 year of train data, 16 years of test data (around 80/20 split)
+    split = 744 # 62 year of train data, 15 years of test data (around 80/20 split)
     train = df[:split]
     test = df[split:]
 
