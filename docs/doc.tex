@@ -14,6 +14,7 @@
 \usepackage{float}
 \usepackage{enumitem}
 \usepackage{hyperref}
+\usepackage[output-decimal-marker={,}]{siunitx}
 
 \title{Prognozowanie sezonowe - porównanie metod \\
     \large Teoria Algorytmów i Obliczeń \\}
@@ -26,7 +27,7 @@
 
 \section{Cel projektu}
 
-Celem projektu jest porównanie wydajności prognozowania sezonowych szeregów czasowych za pomocą maszyny \texttt{SARIMA} (\texttt{Seasonal ARIMA}) oraz liniowej kombinacji maszyn \texttt{ARIMA}, działających na co $n$-tym elemencie szeregu.
+Celem projektu jest porównanie wydajności prognozowania sezonowych szeregów czasowych za pomocą maszyny \texttt{SARIMA} (\texttt{Seasonal ARIMA}) oraz liniowej kombinacji maszyn \texttt{ARIMA} działających na co $n$-tym elemencie szeregu.
 
 \section{Użyte dane}
 
@@ -85,6 +86,7 @@ Uwzględniając nowe procesy oraz operator $B$, otrzymujemy ogólny wzór modelu
 Poszczególne modele \texttt{SARIMA} definiuje się za pomocą zmiennych całkowitych niesezonowych $p, d, q$, zmiennych sezonowych $P, D, Q$ oraz częstości sezonowej $S$ i zapisuje \texttt{SARIMA(p, d, q) x (P, D, Q)S}.
 
 \subsection{Kombinacja liniowa maszyn ARIMA}
+\label{group-arima}
 
 Model ten składa się z grup maszyn \texttt{ARIMA} działających na co $n$-tym elemencie ciągu z ostatnich $S$ elementów, gdzie $S$ jest częstością maszyny \texttt{SARIMA}. Każda z maszyn w grupie operuje na pewnym podciągu ciągu bazowego zawierającego co $n$-ty element ciągu. Podciągi te są parami rozłączne, oraz ich suma równa jest ciągowi bazowemu. Każdy podciągów w grupie jest równej długości. Z tego powodu narzucamy ograniczenie na $n$: $n|S$. Maszyny wewnątrz grupy są uporządkowane według kolejności podciągów, czyli za pierwszą uznajemy maszynę, której podciąg zaczyna się od pierwszego elementu ciągu, drugą - od drugiego, i tak dalej.
 
@@ -93,7 +95,7 @@ Stosując kombinację liniową maszyn \texttt{ARIMA} otrzymujemy następujący w
 \begin{gather*}
     y_t = \sum^n_{i=1}\alpha_iy_{i,t}
 \end{gather*}
-gdzie $\alpha_i$ jest współczynnikiem $i$-tej grupy.
+gdzie $\alpha_i$ jest współczynnikiem $i$-tej grupy. Model ten będzie również nazywany grupą maszyn \texttt{ARIMA} lub \texttt{ARIMA}.
 
 \section{Implementacja}
 
@@ -105,7 +107,7 @@ Dodatkowo, w celu dobrania optymalnych parametrów modeli, użyta została bibli
 
 \subsection{SARIMA}
 
-Przed konstrukcją modelu wykonana została analiza danych za pomocą algorytmu \href{https://www.statsmodels.org/stable/generated/statsmodels.tsa.seasonal.seasonal_decompose.html}{rozkładu sezonowego} udostępnionego przez bibliotekę \texttt{statsmodels}. Wynik rozkłądu prezentuje się następująco:
+Przed konstrukcją modelu wykonana została analiza danych za pomocą algorytmu \href{https://www.statsmodels.org/stable/generated/statsmodels.tsa.seasonal.seasonal_decompose.html}{rozkładu sezonowego} udostępnionego przez bibliotekę \texttt{statsmodels}. Parametry modelu dobrane zostały zgodnie ze wskazówkami przedstawionymi przez \href{https://www.datasciencecentral.com/profiles/blogs/tutorial-forecasting-with-seasonal-arima}{Kostas Hatalis} Wynik rozkłądu prezentuje się następująco:
 
 \begin{figure}[H]
     \includegraphics[width=\textwidth]{img/decomposition.png}
@@ -119,9 +121,9 @@ Wykres przedstawia kolejno: wartość, trend, komponent sezonowy oraz elemen los
     \caption{Rozkład sezonowy danych z pierwszych 10 lat}
 \end{figure}
 
-Z rozkładu danych zauważone zostało, że zgodnie z oczekiwaniami dane posiadają stały element sezonowy o okresie wynoszącym dwanaście miesięcy. Element sezonowy jest stały, więc jako wartość parametru $D$ użyto $1$. Dodatkowo trend danych jest niejednoznaczny. Z tego powodu wartość parametru $d$ ustalono jako $0$.
+Z rozkładu danych zauważono, że zgodnie z oczekiwaniami dane posiadają stały element sezonowy o okresie wynoszącym dwanaście miesięcy. Element sezonowy jest stały, więc jako wartość parametru $D$ użyto $1$. Dodatkowo trend danych jest niejednoznaczny. Z tego powodu wartość parametru $d$ ustalono jako $0$.
 
-Jako pomoc przy dobraniu parametrów modelu \texttt{SARIMA} użyte zostały wykresy autokorelacji (ACF) oraz częściowej autokorelacji danych (PACF):
+Jako pomoc przy dobraniu pozostałych parametrów modelu \texttt{SARIMA} użyte zostały wykresy autokorelacji (ACF) oraz częściowej autokorelacji danych (PACF):
 
 \begin{figure}[H]
     \begin{minipage}{.5\textwidth}
@@ -134,7 +136,7 @@ Jako pomoc przy dobraniu parametrów modelu \texttt{SARIMA} użyte zostały wykr
     \end{minipage}
 \end{figure}
 
-Wykres ACF posiada największą wartość dla wartości $12, 24, \dots$, co potwierda hipotezę o sezonowej częstości wynoszącej $12$ miesięcy. Wykres pzyjmuje wartości ponad poziomem istotności dla dwóch pierwszych wartości (pomijając zerową), co sprawia że jako parametr $q$ użyta została wartość $2$. Dodatkowo wartość dla elementu $12$, czyli $S$, jest dodatnia. Z tego powodu parametr $P$ będzie przyjmował wartość dodatnią, a parametr $Q$ wartość $0$.
+Wykres ACF posiada największą wartość dla wartości $12, 24, \dots$, co potwierda hipotezę o sezonowej częstości wynoszącej $12$ miesięcy. Wykres przyjmuje wartości ponad poziomem istotności dla dwóch pierwszych wartości (pomijając zerową), co powoduje że jako parametr $q$ użyta została wartość $2$. Dodatkowo wartość dla elementu $12$, czyli $S$, jest dodatnia. Z tego powodu parametr $P$ będzie przyjmował wartość dodatnią, a parametr $Q$ - wartość $0$.
 
 Wykres PACF przyjmuje wartości ponad poziomem istotności dla pierwszej wartości (pomijając zerową), co sprawia że jako parametr $p$ użyta została wartość $1$.
 
@@ -142,10 +144,41 @@ Na podstawie analizy danych model \texttt{SARIMA(1, 0, 2) x (P, 1, 0)12}. Dokła
 
 \subsection{ARIMA}
 
-
+Grupa maszyn \texttt{ARIMA} została zaimplementowana zgodnie z \hyperref[group-arima]{opisem}, z grupami o $n$ równym odpowiednio $2, 3, 4$ i $6$. Definicja grupy mówi, że maszyny działają na co $n$-tym elemencie z ostatnich $S$. Dlatego też każda maszyna ma postać \texttt{ARIMA($\frac{S}{n}$, 0, $\frac{S}{n}$)}, gdzie $d = 0$ wynika z analizy przeprowadzonej podczas konstrukcji maszyny \texttt{SARIMA}. Podczas stosowania kombinacji liniowej wyników, z powodu bliskich wartości przewidywanych przez każdą z grup, jako współczynnik dla każdej grupy przyjęto wartość $\frac{1}{4}$.
 
 \section{Wyniki}
 
+Wyniki prezentują się następująco:
+
+\begin{figure}[H]
+    \includegraphics[width=\textwidth]{img/sarima.png}
+    \caption{Wykres przewidywań modelu \texttt{SARIMA} z zaznaczoną pewnością $95\%$ oraz prawdziwych wartości}
+\end{figure}
+
+\begin{figure}[H]
+    \includegraphics[width=\textwidth]{img/arima.png}
+    \caption{Wykres przewidywań modelu kombinacji liniowej \texttt{ARIMA} oraz prawdziwych wartości}
+\end{figure}
+
+\begin{figure}[H]
+    \includegraphics[width=\textwidth]{img/results.png}
+    \caption{Wykres przewidywań obu modeli oraz prawdziwych wartości}
+\end{figure}
+
+\begin{figure}[H]
+    \includegraphics[width=\textwidth]{img/results_5y.png}
+    \caption{Wykres przewidywań obu modeli oraz prawdziwych wartości przycięty do 5 lat}
+\end{figure}
+
+Model \texttt{SARIMA} osiągnął średni błąd kwadratowy równy $\num{1.2023}$ oraz średni błąd procentowy równy $\num{0.4212}$. Liniowa kombinacja maszyn \texttt{ARIMA} osiągnęła średni błąd kwadratowy równy $\num{1.2148}$ oraz średni błąd procentowy równy $\num{0.4346}$.
+
+\newpage
 \section{Wnioski}
+
+Oba modele osiągnęły porównywalną efektywnośc oraz nie wykazują opóźnienia w zmianie trendu, co świadczy o świadomości sezonowej obu modeli. Jednocześnie wykresy obu modeli przypominają cykl, który nie wykazuje reakcji na nietypowe wartości, jak w przypadku przełomu 2009/2010 roku.
+
+Przyglądając się wykresom można zauważyć, że model \texttt{SARIMA} posiada kształt bliższy wartościom rzeczywistym w okresie zimowym, kiedy wartości temperatury są najniższe i wachają się przez kilka miesięcy, przed ponownym wzrostem we wczesnej wiośnie. Natomiast model \texttt{ARIMA} lepiej przystosował się do wartości w okresie po nowym roku, gdzie często widzimy nagły skok, po którym następuje lekkie wygładzenie oraz ponowny wzrost.
+
+Dobrane dane charakteryzują się niejednolitym trendem oraz niską względną różnicą wartości. Może to być jedna z przyczym obserwowanego zachowania danych.
 
 \end{document}

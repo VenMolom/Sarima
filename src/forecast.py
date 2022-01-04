@@ -53,9 +53,16 @@ def plot_data(results: Results, prefix: str):
                          results.upper,
                          color='k', alpha=.15)
 
+def plot_single(results: Results, test:DataFrame, label: str):
+    plt.figure(figsize=(12,5), dpi=100, tight_layout=True)
+    plt.plot(test, label='Actual')
+    plot_data(results=results, prefix=label)
+    plt.title(label)
+    plt.legend(loc='upper left', fontsize=8)
+
 def process_results(test: DataFrame, sarima_results: Results, arima_results: Results):
 
-    plt.figure(figsize=(12,5), dpi=100)
+    plt.figure(figsize=(12,5), dpi=100, tight_layout=True)
     plt.plot(test, label='Actual')
 
     # process SARIMA
@@ -70,6 +77,9 @@ def process_results(test: DataFrame, sarima_results: Results, arima_results: Res
 
     plt.title('SARIMA vs Group ARIMA')
     plt.legend(loc='upper left', fontsize=8)
+
+    plot_single(sarima_results, test, 'SARIMA')
+    plot_single(arima_results, test, 'ARIMA')
     plt.show()
 
 # helper method for data analysis
