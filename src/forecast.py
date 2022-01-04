@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np, pandas as pd
 from pandas.core.frame import DataFrame
 import pmdarima as pm
-from pmdarima.arima.utils import ndiffs, nsdiffs
 import statsmodels.tsa.arima.model as m
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
