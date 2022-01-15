@@ -1,4 +1,10 @@
+# Prognozowanie modelem SARIMA
+
 Kod programu znajduje się w folderze `src`. Folder `docs` zawiera sprawozdanie oraz jego kod źródłowy.
+
+## Przygotowanie środowiska
+
+Program wymaga pythona w wersji `3.x`. Jeżeli system jako domyślną wersję używa pythona w wersji `2.x` należy zastąpić `python` bezpośrednią nazwą (zwykle `python3`).
 
 W celu zainstalowania wymaganych pakietów należy uruchomić
 
@@ -6,13 +12,15 @@ W celu zainstalowania wymaganych pakietów należy uruchomić
 pip install -r requirements.txt
 ```
 
+## Uruchamianie
+
 W celu uruchomienia programu w trybie prognozowania należy uruchomić plik `forecast.py` znajdując się w folderze `src`.
 
 ```CMD
 python forecast.py
 ```
 
-Wynikiem programu będą okna z wykresami przedstawiającymi wyniki prognozowania oraz wypis na konsoli zawierający błędy otrzymanych wyników.
+Wynikiem programu są okna z wykresami przedstawiającymi wyniki prognozowania. Konsola zawiera błędy otrzymanych wyników.
 
 Jeżeli plik z danymi nie znajduje się w aktualnym folderze, lub ma inną nazwę, należy przekazać ścieżkę do niego jako parametr `i`
 
