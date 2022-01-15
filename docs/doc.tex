@@ -4,7 +4,6 @@
 \usepackage{amsfonts}
 \usepackage{polski}
 \usepackage{verbatim}
-\usepackage{unicode-math}
 \usepackage[utf8]{inputenc}
 %\usepackage[polish]{babel}
 \usepackage[T1]{fontenc}
@@ -14,6 +13,7 @@
 \usepackage{float}
 \usepackage{enumitem}
 \usepackage{hyperref}
+\usepackage{url}
 \usepackage[output-decimal-marker={,}]{siunitx}
 
 \title{Prognozowanie sezonowe - porównanie metod \\
@@ -72,15 +72,36 @@ Rozszerzenie to dodaje trzy nowe, analogiczne do modelu \texttt{ARIMA} procesy:
     \item Sezonową średnią ruchomą - stopień oznaczamy przez $Q$
     \item Sezonową integrację - stopień oznaczamy przez $D$
 \end{itemize}
-W celu zdefiniowania wzoru modelu \texttt{SARIMA} zdefiniujmy operator poprzednika $B$:
+Procesy te łączą się z procesami modelu \texttt{ARIMA} w sposób multiplikatywny. Z tego powodu, w celu łatwiejszego zdefiniowania wzoru modelu \texttt{SARIMA}, zdefiniujmy operator poprzednika $B$:
 \begin{gather*}
     By_t = y_{t-1} \\
     B^iy_t = y_{t-i}
 \end{gather*}
-Uwzględniając nowe procesy oraz operator $B$, otrzymujemy ogólny wzór modelu \texttt{SARIMA}:
+
+Używając powyższego operatora możemy przekształcić model \texttt{ARIMA} do poniższej postaci:
+\[
+    \underbrace{\left(1 - \sum^p_{i=1} \phi_iB^i \right)}_\text{AR(p)}
+    \cdot
+    \underbrace{(1 - B)^d}_\text{I(d)}
+    y_t =
+    \underbrace{\left(1 + \sum^q_{i=1} \theta_iB^i \right)}_\text{MA{q}}
+    \epsilon_t
+\]
+
+Uwzględniając procesy sezonowe, o postaci analogicznej do postaci procesów nie sezonowych, otrzymujemy ogólny wzór modelu \texttt{SARIMA}:
 \begin{gather*}
-    \prod^p_{i=1}(1 - \phi_iB^i) \prod^P_{i=1}(1 - \Phi_iB^{Si}) \prod^d_{i=1}(1 - B^i) \prod^D_{i=1}(1 - B^{Si})y_t = \\
-    \prod^q_{i=1}(1 + \theta_iB^i) \prod^Q_{i=1}(1 + \Theta_iB^{Si}) \epsilon_t
+    \underbrace{\left(1 - \sum^p_{i=1} \phi_iB^i \right)}_\text{AR(p)}
+    \cdot
+    \underbrace{\left(1 - \sum^P_{i=1} \Phi_iB^{Si} \right)}_\text{Sezonowe AR(P)}
+    \cdot
+    \underbrace{(1 - B)^d}_\text{I(d)}
+    \cdot
+    \underbrace{(1 - B^S)^D}_\text{Sezonowe I(d)}
+    y_t = \\
+    \underbrace{\left(1 + \sum^q_{i=1} \theta_iB^i \right)}_\text{MA{q}}
+    \cdot
+    \underbrace{\left(1 + \sum^Q_{i=1} \Theta_iB^{Si} \right)}_\text{Sezonowe MA{Q}}
+    \epsilon_t
 \end{gather*}
 
 Poszczególne modele \texttt{SARIMA} definiuje się za pomocą zmiennych całkowitych niesezonowych $p, d, q$, zmiennych sezonowych $P, D, Q$ oraz częstości sezonowej $S$ i zapisuje \texttt{SARIMA(p, d, q) x (P, D, Q)S}.
@@ -88,9 +109,11 @@ Poszczególne modele \texttt{SARIMA} definiuje się za pomocą zmiennych całkow
 \subsection{Kombinacja liniowa maszyn ARIMA}
 \label{group-arima}
 
-Model ten składa się z grup maszyn \texttt{ARIMA} działających na co $n$-tym elemencie ciągu z ostatnich $S$ elementów, gdzie $S$ jest częstością maszyny \texttt{SARIMA}. Każda z maszyn w grupie operuje na pewnym podciągu ciągu bazowego zawierającego co $n$-ty element ciągu. Podciągi te są parami rozłączne, oraz ich suma równa jest ciągowi bazowemu. Każdy podciągów w grupie jest równej długości. Z tego powodu narzucamy ograniczenie na $n$: $n|S$. Maszyny wewnątrz grupy są uporządkowane według kolejności podciągów, czyli za pierwszą uznajemy maszynę, której podciąg zaczyna się od pierwszego elementu ciągu, drugą - od drugiego, i tak dalej.
+Model ten ma za zadanie prognozować kolejne elementy szeregu używając grup maszyn \texttt{ARIMA}. Każda z grup składa się z unikatowej liczby maszyn $n$, gdzie $n|S$ oraz $n > 1$. $i$-ta maszyna w grupie $n$ działa na co $n$-tym elemencie szeregu zaczynając od elementu $i$-tego. Dodatkowo w celu symulowania sezonowości maszyny te wykorzystują tylko ostatnie $S$ elementów szeregu. Oznacza to że taka maszyna ma postać \texttt{ARIMA($\frac{S}{n}$, 0, $\frac{S}{n}$)}.
 
-Weźmy grupy maszyn spełniające powyższe warunki i ponumerujmy je $1, 2, \dots, n$. Oznaczmy przez $y_{i,t}$ element otrzymany z grupy $i$ w momencie $t$. Wartość tą możemy uzyskać stosując wzór modelu \texttt{ARIMA} z maszyną z grupy $i$, której indeks wewnątrz grupy jest równy $t mod i$.
+Podsumowując, każda z maszyn w grupie prognozuje $i$-ty następny element szeregu wykorzystując co $i$-ty z ostatnich $S$ elementów szeregu. Łącząc wyniki maszyn w grupie otrzymujemy pełną prognozę.
+
+Weźmy grupy maszyn spełniające powyższe warunki i ponumerujmy je $1, 2, \dots, n$. Oznaczmy przez $y_{i,t}$ element otrzymany z grupy $i$ w momencie $t$. Wartość tą możemy uzyskać stosując wzór modelu \texttt{ARIMA} z maszyną z grupy $i$, której indeks wewnątrz grupy jest równy $t \mod{i}$.
 Stosując kombinację liniową maszyn \texttt{ARIMA} otrzymujemy następujący wzór na następny element:
 \begin{gather*}
     y_t = \sum^n_{i=1}\alpha_iy_{i,t}
@@ -101,42 +124,77 @@ gdzie $\alpha_i$ jest współczynnikiem $i$-tej grupy. Model ten będzie równie
 
 \subsection{Biblioteka modeli}
 
-Do budowy modeli została użyta biblioteka \href{https://www.statsmodels.org/stable/index.html}{\texttt{statsmodel}} zapewniająca implementacje modeli \texttt{ARIMA} oraz rozszerzenia \texttt{SARIMA}. Dodatkowo biblioteka ta umożliwia automatyczne dobranie odpowiednich współczynników na podstawie danych wejściowych oraz parametrów modelu. Dodatkowo udostępnia metody umożliwiające prognozowanie kolejnych elementów ciągu.
+Do budowy modeli została użyta biblioteka \href{https://www.statsmodels.org/stable/index.html}{\texttt{statsmodel}}, znajdująca się w pakiecie języka \texttt{Python} o tej samej nazwie, zapewniająca implementacje modeli \texttt{ARIMA} oraz rozszerzenia \texttt{SARIMA}. Dodatkowo biblioteka ta umożliwia automatyczne dobranie odpowiednich współczynników na podstawie danych wejściowych oraz parametrów modelu oraz udostępnia metody umożliwiające prognozowanie kolejnych elementów ciągu. Wykorzystane zostały również metody ułatwiające analizę używanego ciągu czasowego, takie jak rozkład sezonowy, ACF oraz PACF, które opisane zostały w następnym rozdziale.
 
 Dodatkowo, w celu dobrania optymalnych parametrów modeli, użyta została biblioteka \href{https://alkaline-ml.com/pmdarima/}{\texttt{pmdarima}}, która umożliwia wyszukanie optymalnych parametrów modelu na podstawie ustalonych kryteriów, po czym zwraca maszynę utworzoną z dobranych przez siebie parametrów w implementacji kompatybilnej z tą, która znajduje się w bibliotece \texttt{statsmodels}.
 
+\subsection{Metody analizy}
+
+\subsubsection{Rozkład sezonowy}
+
+Podczas analizy danych wykorzystany został rozkład sezonowy w modelu addytywnym. Rozkład ten polega na rozdzieleniu ciągu czasowego na trzy niezależne ciągi:
+\begin{itemize}
+    \item trend - określa tendencje zmian wartości ciągu w danym momencie.
+    \item element sezonowy - określa wartość elementu, która wynika z sezonowości ciągu. Jeżeli ciąg wykazuje sezonowość, to element sezonowy jest cyklem.
+    \item element losowy - pozostałość wartości elementu po odjęciu trendu oraz elementu sezonowego. Odpowiada zaburzeniu, które w modelu \texttt{ARIMA} oznaczamy symbolem $\epsilon$.
+\end{itemize}
+gdzie oryginalny ciąg możemy uzyskać poprzez ich sumę.
+
+\subsubsection{Funkcja autokorelacji}
+
+Funkcja autokorelacji (dalej ACF) opisuje w jakim stopniu element szeregu zależy od elementów poprzednich. Mając pomiary $y_1, y_2, \dots, y_n$ wykonane w równych odstępach czasu wartość funkcji autokorelacji dla opóźnienia $k$ zdefiniowana jest następująco:
+\[
+    r_k = \frac{\sum^{n-k}_{i=1}(y_i - \overline{y})(y_{i+k} - \overline{y})}
+    {\sum^{n}_{i=1}(y_i - \overline{y})^2}
+\]
+
+Funkcji ta została użyta w celu dobrania odpowiednich parametrów modeli. Przy konstrukcji wykresów użyte zostały kolejne opóźnienia od $0$ do $30$.
+
+\subsubsection{Funkcja częściowej autokorelacji}
+
+Funkcja częściowej autokorelacji (dalej PACF) wyznacza częściową korelację szeregu czasowego z jego własnymi opóźnionymi wartościami. Mając pomiary $y_1, y_2, \dots, y_n$ wykonane w równych odstępach czasu wartość funkcji częściowej autokorelacji dla opóźnienia $k$ zdefiniowana jest następująco:
+\begin{gather*}
+    \rho_k = Corr(y_t, y_{t - k}) = \frac{\gamma_k}{\gamma_0} \\
+    \gamma_k = Cov(y_t, y_{t - k})
+\end{gather*}
+
+Funkcji ta została użyta w celu dobrania odpowiednich parametrów modeli. Przy konstrukcji wykresów użyte zostały kolejne opóźnienia od $0$ do $30$.
+
 \subsection{SARIMA}
 
-Przed konstrukcją modelu wykonana została analiza danych za pomocą algorytmu \href{https://www.statsmodels.org/stable/generated/statsmodels.tsa.seasonal.seasonal_decompose.html}{rozkładu sezonowego} udostępnionego przez bibliotekę \texttt{statsmodels}. Parametry modelu dobrane zostały zgodnie ze wskazówkami przedstawionymi przez \href{https://www.datasciencecentral.com/profiles/blogs/tutorial-forecasting-with-seasonal-arima}{Kostas Hatalis} Wynik rozkłądu prezentuje się następująco:
+Przed konstrukcją modelu wykonana została analiza danych za pomocą algorytmu \href{https://www.statsmodels.org/stable/generated/statsmodels.tsa.seasonal.seasonal_decompose.html}{rozkładu sezonowego} zaimplementowanego w bibliotece  udostępnionego przez bibliotekę \texttt{statsmodels}. Parametry modelu dobrane zostały zgodnie ze wskazówkami przedstawionymi przez Kotas Hatalis w \cite{A}.
+
+Wynik rozkłądu prezentuje się następująco:
 
 \begin{figure}[H]
     \includegraphics[width=\textwidth]{img/decomposition.png}
-    \caption{Rozkład sezonowy danych}
+    \caption{Rozkład sezonowy średniej miesięcznej temperatury w latach od 1942 do 2019.
+        Przestawia kolejno: wartość, trend, element sezonowy oraz element losowy.}
 \end{figure}
 
-Wykres przedstawia kolejno: wartość, trend, komponent sezonowy oraz elemen losowy każdego elementu ciągu. W celu łatwiejszej analizy skupiono się na pierwszych dziesięciu latach:
+Wykres przedstawia kolejno: wartość, trend, element sezonowy oraz element losowy każdego elementu ciągu. Z uwagi na dużą ilość elementów, wykres ten jest trudny w analizie. Z tego powodu, podczas analizy, skupiono się na pierwszych dziesięciu latach pomiarów:
 
 \begin{figure}[H]
     \includegraphics[width=\textwidth]{img/decomposition_10y.png}
-    \caption{Rozkład sezonowy danych z pierwszych 10 lat}
+    \caption{Rozkład sezonowy danych średniej miesięcznej temperatury w latach od 1942 do 1952.Przestawia kolejno: wartość, trend, element sezonowy oraz element losowy.}
 \end{figure}
 
 Z rozkładu danych zauważono, że zgodnie z oczekiwaniami dane posiadają stały element sezonowy o okresie wynoszącym dwanaście miesięcy. Element sezonowy jest stały, więc jako wartość parametru $D$ użyto $1$. Dodatkowo trend danych jest niejednoznaczny. Z tego powodu wartość parametru $d$ ustalono jako $0$.
 
-Jako pomoc przy dobraniu pozostałych parametrów modelu \texttt{SARIMA} użyte zostały wykresy autokorelacji (ACF) oraz częściowej autokorelacji danych (PACF):
+Jako pomoc przy dobraniu pozostałych parametrów modelu \texttt{SARIMA} użyte zostały wykresy ACF oraz PACF:
 
 \begin{figure}[H]
     \begin{minipage}{.5\textwidth}
         \includegraphics[width=\textwidth]{img/acf.png}
-        \caption{Wykres autokorekacji}
+        \caption{Wykres autokorelacji}
     \end{minipage}
     \begin{minipage}{.5\textwidth}
         \includegraphics[width=\textwidth]{img/pacf.png}
-        \caption{Wykres częsciowej autokorekacji}
+        \caption{Wykres częsciowej autokorelacji}
     \end{minipage}
 \end{figure}
 
-Wykres ACF posiada największą wartość dla wartości $12, 24, \dots$, co potwierda hipotezę o sezonowej częstości wynoszącej $12$ miesięcy. Wykres przyjmuje wartości ponad poziomem istotności dla dwóch pierwszych wartości (pomijając zerową), co powoduje że jako parametr $q$ użyta została wartość $2$. Dodatkowo wartość dla elementu $12$, czyli $S$, jest dodatnia. Z tego powodu parametr $P$ będzie przyjmował wartość dodatnią, a parametr $Q$ - wartość $0$.
+Wykres ACF posiada największą wartość dla wartości $12, 24, \dots$, co potwierdza hipotezę o sezonowej częstości wynoszącej $12$ miesięcy. Wykres przyjmuje wartości ponad poziomem istotności dla dwóch pierwszych wartości (pomijając zerową), co powoduje że jako parametr $q$ użyta została wartość $2$. Dodatkowo wartość dla elementu $12$, czyli $S$, jest dodatnia. Z tego powodu parametr $P$ będzie przyjmował wartość dodatnią, a parametr $Q$ - wartość $0$.
 
 Wykres PACF przyjmuje wartości ponad poziomem istotności dla pierwszej wartości (pomijając zerową), co sprawia że jako parametr $p$ użyta została wartość $1$.
 
@@ -148,7 +206,7 @@ Grupa maszyn \texttt{ARIMA} została zaimplementowana zgodnie z \hyperref[group-
 
 \section{Wyniki}
 
-Wyniki prezentują się następująco:
+Na kolejnych wykresach szarym kolorem zaznaczona została pewność prognozy na poziomie $95\%$. Oznacza to prawdopodobieństwo $95\%$, że prawdziwa wartość będzie zawierać się w tym przedziale. Wyniki prezentują się następująco:
 
 \begin{figure}[H]
     \includegraphics[width=\textwidth]{img/sarima.png}
@@ -175,10 +233,15 @@ Model \texttt{SARIMA} osiągnął średni błąd kwadratowy równy $\num{1.2023}
 \newpage
 \section{Wnioski}
 
-Oba modele osiągnęły porównywalną efektywnośc oraz nie wykazują opóźnienia w zmianie trendu, co świadczy o świadomości sezonowej obu modeli. Jednocześnie wykresy obu modeli przypominają cykl, który nie wykazuje reakcji na nietypowe wartości, jak w przypadku przełomu 2009/2010 roku.
+Oba modele osiągnęły porównywalną efektywność oraz nie wykazują opóźnienia w zmianie trendu, co świadczy o świadomości sezonowej obu modeli. Jednocześnie wykresy obu modeli przypominają cykl, który nie wykazuje reakcji na nietypowe wartości, jak w przypadku przełomu 2009/2010 roku.
 
 Przyglądając się wykresom można zauważyć, że model \texttt{SARIMA} posiada kształt bliższy wartościom rzeczywistym w okresie zimowym, kiedy wartości temperatury są najniższe i wachają się przez kilka miesięcy, przed ponownym wzrostem we wczesnej wiośnie. Natomiast model \texttt{ARIMA} lepiej przystosował się do wartości w okresie po nowym roku, gdzie często widzimy nagły skok, po którym następuje lekkie wygładzenie oraz ponowny wzrost.
 
 Dobrane dane charakteryzują się niejednolitym trendem oraz niską względną różnicą wartości. Może to być jedna z przyczym obserwowanego zachowania danych.
+
+\begin{thebibliography}{20}
+
+    \bibitem[1]{A} K. Hatalis, \emph{Tutorial: Multistep Forecasting with Seasonal ARIMA in Python}, Data Science Central, 2018, \url{https://web.archive.org/web/20201205000439/https://www.datasciencecentral.com/profiles/blogs/tutorial-forecasting-with-seasonal-arima}.
+\end{thebibliography}
 
 \end{document}
