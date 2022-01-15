@@ -7,6 +7,8 @@ import statsmodels.tsa.arima.model as m
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 from collections import namedtuple
+import getopt
+import sys
 
 # seasonal frequency
 S = 12
@@ -15,10 +17,12 @@ S = 12
 Results = namedtuple('Results', ['forecast', 'lower', 'upper'])
 
 ### COMMON
-def read_df():
+def read_df(path = None):
     print('[Reading file]')
-    csv_path = "src/mly532.csv"
-    df = pd.read_csv(csv_path,
+
+    if isinstance(path, type(None)):
+        path = "mly532.csv"
+    df = pd.read_csv(path,
                      names=['year', 'month', 'temp'],
                      header=16,
                      usecols=[0, 1, 2],
@@ -174,10 +178,32 @@ def forecast_arima(train: DataFrame, test: DataFrame, splits: np.ndarray):
     return Results(results, None, None)
 
 ### MAIN
-def main():
-    df = read_df()
+def help():
+    print('forecast.py -i <pathToData> [-a]')
 
-    # analyze(df)
+def main(argv):
+    path = None
+    onlyAnalyze = False
+
+    try:
+        opts, _ = getopt.getopt(argv, "hai:", ["input=", "analyze"])
+    except getopt.GetoptError:
+        help()
+        exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            help()
+            exit()
+        elif opt in ("-i", "--input"):
+            path = arg
+        elif opt in ("-a", "--analyze"):
+            onlyAnalyze = True
+
+    df = read_df(path)
+
+    if (onlyAnalyze):
+        analyze(df)
+        exit()
 
     split = 744 # 62 year of train data, 15 years of test data (around 80/20 split)
     train = df[:split]
@@ -190,4 +216,4 @@ def main():
     process_results(test, sresults, aresults)
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
