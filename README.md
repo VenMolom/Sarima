@@ -1,4 +1,4 @@
-# Prognozowanie modelem SARIMA
+# TAIO Prognozowanie
 
 Kod programu znajduje się w folderze `src`. Folder `docs` zawiera sprawozdanie oraz jego kod źródłowy.
 
