@@ -96,11 +96,11 @@ Uwzględniając procesy sezonowe, o postaci analogicznej do postaci procesów ni
     \cdot
     \underbrace{(1 - B)^d}_\text{I(d)}
     \cdot
-    \underbrace{(1 - B^S)^D}_\text{Sezonowe I(d)}
+    \underbrace{(1 - B^S)^D}_\text{Sezonowe I(D)}
     y_t = \\
-    \underbrace{\left(1 + \sum^q_{i=1} \theta_iB^i \right)}_\text{MA{q}}
+    \underbrace{\left(1 + \sum^q_{i=1} \theta_iB^i \right)}_\text{MA(q)}
     \cdot
-    \underbrace{\left(1 + \sum^Q_{i=1} \Theta_iB^{Si} \right)}_\text{Sezonowe MA{Q}}
+    \underbrace{\left(1 + \sum^Q_{i=1} \Theta_iB^{Si} \right)}_\text{Sezonowe MA(Q)}
     \epsilon_t
 \end{gather*}
 
@@ -109,7 +109,7 @@ Poszczególne modele \texttt{SARIMA} definiuje się za pomocą zmiennych całkow
 \subsection{Kombinacja liniowa maszyn ARIMA}
 \label{group-arima}
 
-Model ten ma za zadanie prognozować kolejne elementy szeregu używając grup maszyn \texttt{ARIMA}. Każda z grup składa się z unikatowej liczby maszyn $n$, gdzie $n|S$ oraz $n > 1$. $i$-ta maszyna w grupie $n$ działa na co $n$-tym elemencie szeregu zaczynając od elementu $i$-tego. Dodatkowo w celu symulowania sezonowości maszyny te wykorzystują tylko ostatnie $S$ elementów szeregu. Oznacza to że taka maszyna ma postać \texttt{ARIMA($\frac{S}{n}$, 0, $\frac{S}{n}$)}.
+Model ten ma za zadanie prognozować kolejne elementy szeregu używając grup maszyn \texttt{ARIMA}. Każda z grup składa się z unikatowej liczby maszyn $n$, gdzie $n|S$ oraz $n > 1$. $I$-ta maszyna w grupie $n$ działa na co $n$-tym elemencie szeregu zaczynając od elementu $i$-tego. Dodatkowo w celu symulowania sezonowości maszyny te wykorzystują tylko ostatnie $S$ elementów szeregu. Oznacza to że taka maszyna z grupy $n$ jest \texttt{ARIMA($\frac{S}{n}$, d, $\frac{S}{n}$)}.
 
 Podsumowując, każda z maszyn w grupie prognozuje $i$-ty następny element szeregu wykorzystując co $i$-ty z ostatnich $S$ elementów szeregu. Łącząc wyniki maszyn w grupie otrzymujemy pełną prognozę.
 
@@ -124,7 +124,7 @@ gdzie $\alpha_i$ jest współczynnikiem $i$-tej grupy. Model ten będzie równie
 
 \subsection{Biblioteka modeli}
 
-Do budowy modeli została użyta biblioteka \href{https://www.statsmodels.org/stable/index.html}{\texttt{statsmodel}}, znajdująca się w pakiecie języka \texttt{Python} o tej samej nazwie, zapewniająca implementacje modeli \texttt{ARIMA} oraz rozszerzenia \texttt{SARIMA}. Dodatkowo biblioteka ta umożliwia automatyczne dobranie odpowiednich współczynników na podstawie danych wejściowych oraz parametrów modelu oraz udostępnia metody umożliwiające prognozowanie kolejnych elementów ciągu. Wykorzystane zostały również metody ułatwiające analizę używanego ciągu czasowego, takie jak rozkład sezonowy, ACF oraz PACF, które opisane zostały w następnym rozdziale.
+Do budowy modeli została użyta biblioteka \href{https://www.statsmodels.org/stable/index.html}{\texttt{statsmodel}}, znajdująca się w pakiecie języka \texttt{python} o tej samej nazwie, zapewniająca implementacje modeli \texttt{ARIMA} oraz rozszerzenia \texttt{SARIMA}. Dodatkowo biblioteka ta umożliwia automatyczne dobranie odpowiednich współczynników na podstawie danych wejściowych i parametrów modelu oraz udostępnia metody umożliwiające prognozowanie kolejnych elementów ciągu. Wykorzystane zostały również metody ułatwiające analizę używanego szeregu czasowego, takie jak rozkład sezonowy, ACF oraz PACF, które opisane zostały w następnym rozdziale.
 
 Dodatkowo, w celu dobrania optymalnych parametrów modeli, użyta została biblioteka \href{https://alkaline-ml.com/pmdarima/}{\texttt{pmdarima}}, która umożliwia wyszukanie optymalnych parametrów modelu na podstawie ustalonych kryteriów, po czym zwraca maszynę utworzoną z dobranych przez siebie parametrów w implementacji kompatybilnej z tą, która znajduje się w bibliotece \texttt{statsmodels}.
 
@@ -132,10 +132,10 @@ Dodatkowo, w celu dobrania optymalnych parametrów modeli, użyta została bibli
 
 \subsubsection{Rozkład sezonowy}
 
-Podczas analizy danych wykorzystany został rozkład sezonowy w modelu addytywnym. Rozkład ten polega na rozdzieleniu ciągu czasowego na trzy niezależne ciągi:
+Podczas analizy danych wykorzystany został rozkład sezonowy w modelu addytywnym. Rozkład ten polega na rozdzieleniu szeregu czasowego na trzy niezależne szeregi:
 \begin{itemize}
     \item trend - określa tendencje zmian wartości ciągu w danym momencie.
-    \item element sezonowy - określa wartość elementu, która wynika z sezonowości ciągu. Jeżeli ciąg wykazuje sezonowość, to element sezonowy jest cyklem.
+    \item element sezonowy - określa wartość elementu, która wynika z sezonowości szeregu. Jeżeli szereg wykazuje sezonowość, to element sezonowy jest szeregiem okresowym.
     \item element losowy - pozostałość wartości elementu po odjęciu trendu oraz elementu sezonowego. Odpowiada zaburzeniu, które w modelu \texttt{ARIMA} oznaczamy symbolem $\epsilon$.
 \end{itemize}
 gdzie oryginalny ciąg możemy uzyskać poprzez ich sumę.
@@ -162,13 +162,36 @@ Funkcji ta została użyta w celu dobrania odpowiednich parametrów modeli. Przy
 
 \subsection{SARIMA}
 
-Przed konstrukcją modelu wykonana została analiza danych za pomocą algorytmu \href{https://www.statsmodels.org/stable/generated/statsmodels.tsa.seasonal.seasonal_decompose.html}{rozkładu sezonowego} zaimplementowanego w bibliotece  udostępnionego przez bibliotekę \texttt{statsmodels}. Parametry modelu dobrane zostały zgodnie ze wskazówkami przedstawionymi przez Kotas Hatalis w \cite{A}.
+Przed konstrukcją modelu wykonana została analiza danych za pomocą algorytmu \href{https://www.statsmodels.org/stable/generated/statsmodels.tsa.seasonal.seasonal_decompose.html}{rozkładu sezonowego} zaimplementowanego w bibliotece  udostępnionego przez bibliotekę \texttt{statsmodels}. Parametry modelu dobrane zostały zgodnie ze wskazówkami przedstawionymi przez Kotas Hatalis w \cite{A}. Mówią one:
+\begin{itemize}
+    \item $d = \begin{cases}
+                  0      & \text{jeżeli szereg nie ma widocznego trendu.} \\
+                  \geq 1 & \text{jeżeli szereg ma widoczny trend.}
+              \end{cases}$
+    \item $p$ równe pierwszemu opóźnieniu, dla którego wartość PACF powyżej poziomu znaczenia.
+    \item $q$ równe pierwszemu opóźnieniu, dla którego wartość ACF powyżej poziomu znaczenia.
+    \item $S$ równe opóźnieniu, dla którego ACF przyjmuje największą wartość.
+    \item $D = \begin{cases}
+                  1 & \text{jeżeli szereg ma stabilny element sezonowy.}    \\
+                  0 & \text{jeżeli szereg ma niestabilny element sezonowy.}
+              \end{cases}$
+    \item $d + D \leq 2$
+    \item $P = \begin{cases}
+                  \geq 1 & \text{jeżeli ACF przyjmuje wartość dodatnią dla opóźnienia $S$.} \\
+                  0      & \text{wpp.}
+              \end{cases}$
+    \item $Q = \begin{cases}
+                  \geq 1 & \text{jeżeli ACF przyjmuje wartość ujemną dla opóźnienia $S$.} \\
+                  0      & \text{wpp.}
+              \end{cases}$
+    \item $P + Q \leq 2$
+\end{itemize}
 
-Wynik rozkłądu prezentuje się następująco:
+Wynik rozkładu prezentuje się następująco:
 
 \begin{figure}[H]
     \includegraphics[width=\textwidth]{img/decomposition.png}
-    \caption{Rozkład sezonowy średniej miesięcznej temperatury w latach od 1942 do 2019.
+    \caption{Rozkład sezonowy średniej miesięcznej temperatury w latach od $1942$ do $2019$.
         Przestawia kolejno: wartość, trend, element sezonowy oraz element losowy.}
 \end{figure}
 
@@ -176,7 +199,7 @@ Wykres przedstawia kolejno: wartość, trend, element sezonowy oraz element loso
 
 \begin{figure}[H]
     \includegraphics[width=\textwidth]{img/decomposition_10y.png}
-    \caption{Rozkład sezonowy danych średniej miesięcznej temperatury w latach od 1942 do 1952.Przestawia kolejno: wartość, trend, element sezonowy oraz element losowy.}
+    \caption{Rozkład sezonowy danych średniej miesięcznej temperatury w latach od $1942$ do $1952$.Przestawia kolejno: wartość, trend, element sezonowy oraz element losowy.}
 \end{figure}
 
 Z rozkładu danych zauważono, że zgodnie z oczekiwaniami dane posiadają stały element sezonowy o okresie wynoszącym dwanaście miesięcy. Element sezonowy jest stały, więc jako wartość parametru $D$ użyto $1$. Dodatkowo trend danych jest niejednoznaczny. Z tego powodu wartość parametru $d$ ustalono jako $0$.
@@ -186,17 +209,17 @@ Jako pomoc przy dobraniu pozostałych parametrów modelu \texttt{SARIMA} użyte 
 \begin{figure}[H]
     \begin{minipage}{.5\textwidth}
         \includegraphics[width=\textwidth]{img/acf.png}
-        \caption{Wykres autokorelacji}
+        \caption{Wykres autokorelacji danych temperaturowych dla opóźnień od $0$ do $30$.}
     \end{minipage}
     \begin{minipage}{.5\textwidth}
         \includegraphics[width=\textwidth]{img/pacf.png}
-        \caption{Wykres częsciowej autokorelacji}
+        \caption{Wykres częściowej autokorelacji danych temperaturowych dla opóźnień od $0$ do $30$.}
     \end{minipage}
 \end{figure}
 
-Wykres ACF posiada największą wartość dla wartości $12, 24, \dots$, co potwierdza hipotezę o sezonowej częstości wynoszącej $12$ miesięcy. Wykres przyjmuje wartości ponad poziomem istotności dla dwóch pierwszych wartości (pomijając zerową), co powoduje że jako parametr $q$ użyta została wartość $2$. Dodatkowo wartość dla elementu $12$, czyli $S$, jest dodatnia. Z tego powodu parametr $P$ będzie przyjmował wartość dodatnią, a parametr $Q$ - wartość $0$.
+Wykres ACF posiada największą wartość dla opóźnień $12, 24, \dots$, co potwierdza hipotezę o sezonowej częstości wynoszącej $12$ miesięcy. Wykres przyjmuje wartości ponad poziomem istotności dla dwóch opóźnień $1$ oraz $2$, co powoduje że jako parametr $q$ użyta została wartość $2$. Dodatkowo wartość dla opóźnienia $12$, czyli $S$, jest dodatnia. Z tego powodu parametr $P$ będzie przyjmował wartość dodatnią, a parametr $Q$ - wartość $0$.
 
-Wykres PACF przyjmuje wartości ponad poziomem istotności dla pierwszej wartości (pomijając zerową), co sprawia że jako parametr $p$ użyta została wartość $1$.
+Wykres PACF przyjmuje wartości ponad poziomem istotności dla opóźnienia $1$, co sprawia że jako parametr $p$ użyta została wartość $1$.
 
 Na podstawie analizy danych model \texttt{SARIMA(1, 0, 2) x (P, 1, 0)12}. Dokładna wartość $P$ została dobrana przy użyciu metody automatycznego dobierania parametrów modelu udostępnionej przez bibliotekę \texttt{pmdarima} i wyniosła $2$. Zatem ostateczna postać modelu wyniosła \texttt{SARIMA(1, 0, 2) x (2, 1, 0)12}.
 
